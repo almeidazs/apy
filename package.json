@@ -1,0 +1,27 @@
+{
+	"name": "base",
+	"module": "index.ts",
+	"type": "module",
+	"private": true,
+	"devDependencies": {
+		"@biomejs/biome": "^2.2.4",
+		"@types/bun": "^1.2.21"
+	},
+	"peerDependencies": {
+		"typescript": "^5.9.2"
+	},
+	"scripts": {
+		"fmt": "bunx biome check --write . && clear",
+		"client": "bun run api/app.ts --watch",
+		"client:compile": "bun build --compile --minify --target bun --outfile server ./api/app.ts"
+	},
+	"dependencies": {
+		"@elysiajs/cron": "^1.4.0",
+		"@elysiajs/opentelemetry": "^1.4.0",
+		"@elysiajs/swagger": "^1.3.1",
+		"@prisma/client": "^6.16.1",
+		"elysia": "^1.3.21",
+		"fast-jwt": "^6.0.2",
+		"prisma": "^6.16.1"
+	}
+}

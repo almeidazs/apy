@@ -1,0 +1,33 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Users {
+    id          BigInt      @id
+    email       String      @unique
+    password    String      @db.VarChar(72) // Max Bcrypt length
+
+    sessions    Sessions[]  @relation("user_sessions")
+
+    @@map("users")
+}
+
+model Sessions {
+    id          BigInt      @id
+    userId      BigInt      @map("user_id")
+
+    hash        String      @unique
+    expiresAt   DateTime    @map("expires_at")      @db.Timestamptz()
+
+    user        Users       @relation("user_sessions", fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@index([expiresAt])
+
+    @@map("sessions")
+}
