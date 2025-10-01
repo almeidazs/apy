@@ -1,6 +1,6 @@
 import { cron, Patterns } from '@elysiajs/cron';
+import { openapi } from '@elysiajs/openapi';
 import { opentelemetry } from '@elysiajs/opentelemetry';
-import { swagger } from '@elysiajs/swagger';
 import { Elysia } from 'elysia';
 import { verify } from '@/config/auth';
 import { env } from '@/env';
@@ -26,9 +26,30 @@ export const createApp = () =>
 			set.headers = commonHeaders();
 		})
 		.use(
-			swagger({
+			openapi({
+				documentation: {
+					info: {
+						version: '0.0.1',
+						title: `${env.APP_NAME} API`,
+						description: `Current API for ${env.APP_NAME} project`,
+					},
+					tags: [
+						{
+							name: 'PAE',
+							description: 'Private API Endpoints',
+						},
+						{
+							name: 'Session',
+							description: 'Sessions related enpoints',
+						},
+					],
+				},
+				swagger: {
+					autoDarkMode: true,
+				},
 				path: '/docs',
-				autoDarkMode: true,
+				provider: 'scalar',
+				enabled: env.NODE_ENV === 'development',
 			}),
 		)
 		.use(

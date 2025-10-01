@@ -17,9 +17,8 @@ const workerId = BigInt(
 let lastTimestamp = 0n;
 let sequence = 0n;
 
-export const snowflake = () => {
-	const date = new Date();
-	let timestamp = BigInt(date.getTime());
+export const genSnow = () => {
+	let timestamp = BigInt(Date.now());
 
 	if (timestamp === lastTimestamp) {
 		sequence = (sequence + 1n) & maxSequence;
@@ -29,17 +28,9 @@ export const snowflake = () => {
 
 	lastTimestamp = timestamp;
 
-	return {
-		createdAt: date.toISOString(),
-		id:
-			((timestamp - EPOCH) << (workerBits + sequenceBits)) |
-			(workerId << sequenceBits) |
-			sequence,
-	};
-};
-
-export const getSnowTimestamp = (id: bigint) => {
-	const timestamp = id >> (workerBits + sequenceBits);
-
-	return Number(timestamp + EPOCH);
+	return (
+		((timestamp - EPOCH) << (workerBits + sequenceBits)) |
+		(workerId << sequenceBits) |
+		sequence
+	);
 };

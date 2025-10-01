@@ -6,6 +6,9 @@ import { SessionService } from './service';
 export const route = (elysia: typeof app) =>
 	elysia.group('/sessions', (sessions) =>
 		sessions
+			.guard({
+				tags: ['Session'],
+			})
 			.post(
 				'',
 				async ({ body, cookie }) => {
@@ -33,29 +36,61 @@ export const route = (elysia: typeof app) =>
 					return user;
 				},
 				{
+					detail: {
+						description: 'Create a new user account in database',
+					},
 					body: SessionModel.SIGN_UP_SCHEMA,
+					response: SessionModel.SIGN_UP_RESPONSE,
 				},
 			)
-			.get('', ({ user }) => SessionService.list({ userId: user.id }))
-			.delete('/@me', async ({ cookie: { access, refresh } }) => {
-				await SessionService.signOut({ token: refresh.value });
-
-				access.remove();
-				refresh.remove();
+			.get('', ({ user }) => SessionService.list({ userId: user.id }), {
+				detail: {
+					description: 'List all sessions related to the current user',
+				},
+				response: SessionModel.LIST_RESPONSE,
 			})
-			.delete('', async ({ user, cookie: { access, refresh } }) => {
-				const MAX_SESSIONS_PER_USER = 10;
+			.delete(
+				'/@me',
+				async ({ cookie: { access, refresh } }) => {
+					await SessionService.signOut({ token: refresh.value as string });
 
-				await SessionService.sweep({
-					userId: user.id,
-					limit: MAX_SESSIONS_PER_USER,
-				});
+					access.remove();
+					refresh.remove();
+				},
+				{
+					detail: {
+						description:
+							'Revoke the current session of the request and delete it in the database',
+					},
+					response: SessionModel.NO_CONTENT_RESPONSE,
+				},
+			)
+			.delete(
+				'',
+				async ({ user, cookie: { access, refresh } }) => {
+					const MAX_SESSIONS_PER_USER = 10;
 
-				access.remove();
-				refresh.remove();
-			})
+					await SessionService.sweep({
+						userId: user.id,
+						limit: MAX_SESSIONS_PER_USER,
+					});
+
+					access.remove();
+					refresh.remove();
+				},
+				{
+					detail: {
+						description: 'Revoke all sessions related to the current user',
+					},
+					response: SessionModel.NO_CONTENT_RESPONSE,
+				},
+			)
 			.post('/gen-code', ({ body }) => SessionService.genCode(body), {
+				detail: {
+					description: 'Generate a 8-digit code to create a new user account',
+				},
 				body: SessionModel.GEN_CODE_SCHEMA,
+				response: SessionModel.GEN_CODE_RESPONSE,
 			})
 			.post(
 				'/sign-in',
@@ -84,7 +119,11 @@ export const route = (elysia: typeof app) =>
 					return user;
 				},
 				{
+					detail: {
+						description: 'Log in to an already created account',
+					},
 					body: SessionModel.SIGN_IN_SCHEMA,
+					response: SessionModel.SIGN_IN_RESPONSE,
 				},
 			),
 	);

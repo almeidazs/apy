@@ -1,7 +1,7 @@
 import { redis } from 'bun';
 import { getCredentials, hashRefreshToken } from '@/config/auth';
 import { prisma } from '@/db';
-import { snowflake } from '@/db/util/snowflake';
+import { genSnow } from '@/db/util/snowflake';
 import { ErrorCode } from '@/shared/errors/code';
 import { exception } from '@/shared/errors/exception';
 import type { SessionModel } from './model';
@@ -24,7 +24,7 @@ export class SessionService {
 			throw exception('Bad Request', ErrorCode.CodeAlreadyGenerated);
 
 		const FIVE_MIN_IN_SEC = 300;
-		const code = Math.random().toString(36);
+		const code = Math.random().toString(36).slice(2, 10).toUpperCase();
 
 		await redis.set(REDIS_KEY, code, 'EX', FIVE_MIN_IN_SEC);
 
@@ -46,7 +46,7 @@ export class SessionService {
 		if (code !== emailCode)
 			throw exception('Bad Gateway', ErrorCode.InvalidCode);
 
-		const { id, createdAt } = snowflake();
+		const id = genSnow();
 		const { hash, access, refresh } = getCredentials({ id });
 
 		const SEVEN_DAYS_LATER = new Date(Date.now() + 6.048e8);
@@ -59,7 +59,7 @@ export class SessionService {
 					sessions: {
 						create: {
 							hash,
-							id: snowflake().id,
+							id: genSnow(),
 							expiresAt: SEVEN_DAYS_LATER,
 						},
 					},
@@ -72,7 +72,6 @@ export class SessionService {
 
 		return {
 			user: {
-				createdAt,
 				id: String(id),
 			},
 			session: {
@@ -117,7 +116,7 @@ export class SessionService {
 				data: {
 					hash,
 					userId,
-					id: snowflake().id,
+					id: genSnow(),
 					expiresAt: SEVEN_DAYS_LATER,
 				},
 				select: { id: true },
@@ -169,6 +168,6 @@ export class SessionService {
 			select: { id: true, expiresAt: true },
 		});
 
-		return sessions;
+		return sessions.map(({ id, expiresAt }) => ({ expiresAt, id: String(id) }));
 	}
 }
